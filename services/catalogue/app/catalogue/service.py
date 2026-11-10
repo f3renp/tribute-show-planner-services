@@ -185,8 +185,9 @@ def edit_song(song_id, form):
 def get_songs_by_ids(song_ids):
     """Song details for other domains, as a dict {song_id: song}.
 
-    This is the only catalogue function the show builder calls. Ids that
-    do not exist are simply missing from the result.
+    The shows service reaches it over HTTP through GET /api/songs
+    (catalogue/api.py). Ids that do not exist are simply missing from the
+    result.
     """
     songs = repository.get_songs_with_outfits(song_ids)
     return {song["id"]: song for song in songs}

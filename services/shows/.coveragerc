@@ -1,0 +1,6 @@
+# Settings for coverage.py, used by pytest --cov.
+[run]
+# Measure the app code only: the test files would count themselves as 100%
+# covered and make the total look higher than it is.
+omit =
+    tests/*

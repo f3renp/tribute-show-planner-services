@@ -18,3 +18,6 @@ data/
 .pytest_cache/
 .coverage
 htmlcov/
+
+# Local settings for docker compose (copy of .env.example)
+.env

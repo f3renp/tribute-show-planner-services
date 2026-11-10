@@ -1,6 +1,6 @@
 """SQL for the show builder tables. Only this file reads or writes shows and
 setlist_items. It never touches songs or outfits: song details come from
-the catalogue through catalogue.service.get_songs_by_ids."""
+the catalogue service through shows.catalogue_client."""
 import db
 
 # Shows ------------------------------------------------------------------

@@ -1,0 +1,352 @@
+/* Stage look: black header, white page, red for actions, gold for highlights.
+   Plain CSS, no framework. Colours are set once here and reused below. */
+:root {
+  --black: #111;
+  --text: #222;
+  --muted: #8a8a8a;
+  --line: #e2e2e2;
+  --page: #ededed;
+  --red: #c8102e;
+  --red-dark: #9b0c23;
+  --gold: #d4a017;
+  --gold-light: #fbf4df;
+  --ok-text: #1d6b34;
+  --ok-back: #e8f5ec;
+  --bad-text: #8f0d22;
+  --bad-back: #fdecee;
+  --label-width: 11rem;
+}
+
+/* Page ------------------------------------------------------------------ */
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  line-height: 1.5;
+  color: var(--text);
+  background: var(--page);
+}
+
+header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 2.5rem;
+  align-items: center;
+  padding: 1rem 2rem;
+  background: var(--black);
+  color: #fff;
+  border-bottom: 3px solid var(--gold);
+}
+
+header strong {
+  color: var(--gold);
+  font-size: 1.2rem;
+  letter-spacing: 0.04em;
+}
+
+header nav {
+  display: flex;
+  gap: 1.5rem;
+}
+
+header a {
+  color: #fff;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+header a:hover {
+  color: var(--gold);
+}
+
+main {
+  max-width: 66rem;
+  margin: 2rem auto;
+  padding: 1.5rem 2.5rem 2.5rem;
+  background: #fff;
+  border-radius: 6px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+  /* Wide tables scroll sideways on small screens instead of overflowing. */
+  overflow-x: auto;
+}
+
+h1 {
+  margin-top: 0.5rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 3px solid var(--gold);
+  display: inline-block;
+}
+
+h2 {
+  margin-top: 2.25rem;
+}
+
+a {
+  color: var(--red);
+}
+
+a:hover {
+  color: var(--red-dark);
+}
+
+/* Buttons --------------------------------------------------------------- */
+
+button {
+  font: inherit;
+  padding: 0.45rem 1.1rem;
+  border: 1px solid var(--red);
+  border-radius: 4px;
+  background: var(--red);
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+button:hover {
+  background: var(--red-dark);
+  border-color: var(--red-dark);
+}
+
+/* A link that looks like a red button, e.g. "Add a song". */
+a.button {
+  display: inline-block;
+  padding: 0.45rem 1.1rem;
+  border-radius: 4px;
+  background: var(--red);
+  color: #fff;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+a.button:hover {
+  background: var(--red-dark);
+  color: #fff;
+}
+
+/* Small buttons inside tables are outlined so the rows stay calm. */
+.actions button {
+  padding: 0.2rem 0.6rem;
+  background: #fff;
+  color: var(--red);
+  font-size: 0.9rem;
+}
+
+.actions button:hover {
+  background: var(--red);
+  color: #fff;
+}
+
+button:disabled,
+button:disabled:hover {
+  border-color: var(--line);
+  background: #f5f5f5;
+  color: var(--muted);
+  cursor: default;
+}
+
+/* Tables ---------------------------------------------------------------- */
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+}
+
+th, td {
+  text-align: left;
+  padding: 0.65rem 0.9rem;
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+}
+
+th {
+  background: var(--black);
+  color: #fff;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 2px solid var(--gold);
+}
+
+tbody tr:hover {
+  background: var(--gold-light);
+}
+
+tr.retired td {
+  color: var(--muted);
+}
+
+tr.retired td:first-child {
+  text-decoration: line-through;
+}
+
+tr.break td {
+  font-style: italic;
+  background: #f7f7f7;
+}
+
+/* The actions cell stays a normal table cell (no flex on the td itself),
+   so its bottom line lines up with the rest of the row. The links and
+   forms inside it sit side by side on one line. */
+td.actions {
+  white-space: nowrap;
+}
+
+.actions > * {
+  display: inline-flex;
+  gap: 0.35rem;
+  margin: 0;
+  vertical-align: middle;
+}
+
+.actions > * + * {
+  margin-left: 0.5rem;
+}
+
+/* Forms: label text on the left, input on the right -------------------- */
+
+form.stacked {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  max-width: 34rem;
+}
+
+form.stacked label {
+  display: grid;
+  grid-template-columns: var(--label-width) 1fr;
+  align-items: center;
+  gap: 1rem;
+  font-weight: 600;
+}
+
+input, select {
+  font: inherit;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid #bbb;
+  border-radius: 4px;
+  background: #fff;
+}
+
+input:focus, select:focus {
+  outline: 2px solid var(--gold);
+  border-color: var(--gold);
+}
+
+/* Buttons line up under the inputs, not under the labels. */
+form.stacked > button,
+.form-buttons {
+  align-self: flex-start;
+  margin-left: calc(var(--label-width) + 1rem);
+}
+
+.form-buttons {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+/* Messages -------------------------------------------------------------- */
+
+.errors,
+.problems,
+.no-problems {
+  padding: 0.9rem 1.2rem;
+  border-radius: 4px;
+  border-left: 5px solid;
+}
+
+.errors,
+.problems {
+  list-style: none;
+  color: var(--bad-text);
+  background: var(--bad-back);
+  border-color: var(--red);
+}
+
+.errors li + li,
+.problems li + li {
+  margin-top: 0.4rem;
+  padding-top: 0.4rem;
+  border-top: 1px solid #f5c6cd;
+}
+
+.no-problems {
+  color: var(--ok-text);
+  background: var(--ok-back);
+  border-color: var(--ok-text);
+  font-weight: 600;
+}
+
+/* Show page ------------------------------------------------------------- */
+
+.show-facts {
+  color: #555;
+}
+
+.running-time {
+  display: inline-block;
+  padding: 0.6rem 1.2rem;
+  border: 2px solid var(--gold);
+  border-radius: 4px;
+  background: var(--gold-light);
+  font-size: 1.1rem;
+}
+
+.running-time strong {
+  font-size: 1.5rem;
+}
+
+/* routes.py sets over_limit with rules.is_over_limit; the template only
+   adds this class. */
+.running-time.over-limit {
+  border-color: var(--red);
+  background: var(--bad-back);
+  color: var(--bad-text);
+}
+
+/* Click shout (made by app.js) ------------------------------------------ */
+
+.shout {
+  position: fixed;
+  z-index: 10;
+  /* Clicks go straight through it to whatever is underneath. */
+  pointer-events: none;
+  color: var(--gold);
+  font-weight: 800;
+  font-size: 1.1rem;
+  white-space: nowrap;
+  text-shadow: 0 1px 2px var(--black);
+  animation: shout-up 0.8s ease-out forwards;
+}
+
+/* Starts centred just above the pointer, rises and fades away. */
+@keyframes shout-up {
+  from {
+    opacity: 1;
+    transform: translate(-50%, -100%);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, -250%);
+  }
+}
+
+/* Small screens: put labels above their inputs. */
+@media (max-width: 40rem) {
+  main {
+    margin: 0;
+    padding: 1rem;
+    border-radius: 0;
+  }
+
+  form.stacked label {
+    grid-template-columns: 1fr;
+    gap: 0.3rem;
+  }
+
+  form.stacked > button,
+  .form-buttons {
+    margin-left: 0;
+  }
+}

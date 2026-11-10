@@ -2,12 +2,11 @@
 
 The first tests cover the pure functions (validate_show, validate_break,
 move_in_order). The rest use the database fixture from conftest.py and
-add songs through the catalogue service, the same way the app does.
+the catalogue fixture, a fake catalogue service the tests add songs to, so
+no test calls the real catalogue over HTTP.
 """
 import pytest
 
-from catalogue import repository as catalogue_repository
-from catalogue import service as catalogue_service
 from shows import repository, service
 
 
@@ -106,22 +105,24 @@ def test_unknown_direction_raises():
 # Saving and reading setlists (temporary database) -----------------------
 
 
-def add_song(title, outfit_name="Red jacket"):
-    """Save an outfit (if new) and a song through the catalogue. Return the song id."""
-    if catalogue_repository.find_outfit_by_name(outfit_name) is None:
-        catalogue_service.add_outfit({"name": outfit_name, "change_seconds": "90"})
-    outfit_id = catalogue_repository.find_outfit_by_name(outfit_name)["id"]
-    form = {
+def add_song(catalogue, title):
+    """Add a song to the fake catalogue, shaped like GET /api/songs returns
+    it. Return the song id."""
+    song_id = len(catalogue) + 1
+    catalogue[song_id] = {
+        "id": song_id,
         "title": title,
         "album": "Thriller",
-        "year": "1982",
-        "duration": "4:54",
-        "energy": "4",
+        "year": 1982,
+        "duration_seconds": 294,
+        "energy": 4,
         "kind": "dance",
-        "outfit_id": str(outfit_id),
+        "outfit_id": 1,
+        "active": 1,
+        "outfit_name": "Red jacket",
+        "outfit_change_seconds": 90,
     }
-    assert catalogue_service.add_song(form) == []
-    return catalogue_repository.find_song_by_title_and_album(title, "Thriller")["id"]
+    return song_id
 
 
 def create_show():
@@ -143,13 +144,13 @@ def item_labels(show_id):
 
 
 @pytest.mark.usefixtures("database")
-def test_create_show_saves_it():
+def test_create_show_saves_it(catalogue):
     show_id = create_show()
     assert repository.get_show(show_id)["venue"] == "Teatro Real"
 
 
 @pytest.mark.usefixtures("database")
-def test_create_show_with_errors_saves_nothing():
+def test_create_show_with_errors_saves_nothing(catalogue):
     show_id, errors = service.create_show(dict(valid_show_form(), name=""))
     assert show_id is None
     assert errors == ["Name is required."]
@@ -157,31 +158,31 @@ def test_create_show_with_errors_saves_nothing():
 
 
 @pytest.mark.usefixtures("database")
-def test_songs_and_breaks_are_added_at_the_end_in_order():
+def test_songs_and_breaks_are_added_at_the_end_in_order(catalogue):
     show_id = create_show()
-    assert service.add_song_to_setlist(show_id, add_song("Billie Jean")) == []
+    assert service.add_song_to_setlist(show_id, add_song(catalogue, "Billie Jean")) == []
     form = {"break_label": "Rest", "break_seconds": "60"}
     assert service.add_break_to_setlist(show_id, form) == []
-    assert service.add_song_to_setlist(show_id, add_song("Beat It")) == []
+    assert service.add_song_to_setlist(show_id, add_song(catalogue, "Beat It")) == []
     assert item_labels(show_id) == ["Billie Jean", "break: Rest", "Beat It"]
     positions = [item["position"] for item in repository.list_items(show_id)]
     assert positions == [1, 2, 3]
 
 
 @pytest.mark.usefixtures("database")
-def test_get_setlist_attaches_the_catalogue_details():
+def test_get_setlist_attaches_the_catalogue_details(catalogue):
     show_id = create_show()
-    service.add_song_to_setlist(show_id, add_song("Billie Jean"))
+    service.add_song_to_setlist(show_id, add_song(catalogue, "Billie Jean"))
     song = service.get_setlist(show_id)[0]["song"]
     assert song["duration_seconds"] == 294
     assert song["outfit_change_seconds"] == 90
 
 
 @pytest.mark.usefixtures("database")
-def test_add_song_to_setlist_refuses_no_song_missing_song_and_retired_song():
+def test_add_song_to_setlist_refuses_no_song_missing_song_and_retired_song(catalogue):
     show_id = create_show()
-    song_id = add_song("Billie Jean")
-    catalogue_service.retire_song(song_id)
+    song_id = add_song(catalogue, "Billie Jean")
+    catalogue[song_id]["active"] = 0
     assert service.add_song_to_setlist(show_id, None) == ["Choose a song."]
     assert service.add_song_to_setlist(show_id, 99) == [
         "That song is not in the catalogue."
@@ -191,7 +192,7 @@ def test_add_song_to_setlist_refuses_no_song_missing_song_and_retired_song():
 
 
 @pytest.mark.usefixtures("database")
-def test_bad_break_is_not_saved():
+def test_bad_break_is_not_saved(catalogue):
     show_id = create_show()
     errors = service.add_break_to_setlist(show_id, {"break_label": "", "break_seconds": "60"})
     assert errors == ["Break label is required."]
@@ -199,30 +200,30 @@ def test_bad_break_is_not_saved():
 
 
 @pytest.mark.usefixtures("database")
-def test_retired_song_stays_in_an_existing_setlist():
+def test_retired_song_stays_in_an_existing_setlist(catalogue):
     show_id = create_show()
-    song_id = add_song("Billie Jean")
+    song_id = add_song(catalogue, "Billie Jean")
     service.add_song_to_setlist(show_id, song_id)
-    catalogue_service.retire_song(song_id)
+    catalogue[song_id]["active"] = 0
     setlist = service.get_setlist(show_id)
     assert setlist[0]["song"]["active"] == 0
 
 
 @pytest.mark.usefixtures("database")
-def test_move_item_saves_the_new_order():
+def test_move_item_saves_the_new_order(catalogue):
     show_id = create_show()
     for title in ["Billie Jean", "Beat It", "Thriller"]:
-        service.add_song_to_setlist(show_id, add_song(title))
+        service.add_song_to_setlist(show_id, add_song(catalogue, title))
     last_item_id = repository.list_items(show_id)[2]["id"]
     service.move_item(show_id, last_item_id, "up")
     assert item_labels(show_id) == ["Billie Jean", "Thriller", "Beat It"]
 
 
 @pytest.mark.usefixtures("database")
-def test_remove_item_closes_the_gap_in_positions():
+def test_remove_item_closes_the_gap_in_positions(catalogue):
     show_id = create_show()
     for title in ["Billie Jean", "Beat It", "Thriller"]:
-        service.add_song_to_setlist(show_id, add_song(title))
+        service.add_song_to_setlist(show_id, add_song(catalogue, title))
     middle_item_id = repository.list_items(show_id)[1]["id"]
     service.remove_item(show_id, middle_item_id)
     assert item_labels(show_id) == ["Billie Jean", "Thriller"]

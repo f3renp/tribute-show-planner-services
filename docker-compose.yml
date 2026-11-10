@@ -1,0 +1,31 @@
+# Runs both services: docker compose up --build
+# Catalogue: http://localhost:8001   Shows: http://localhost:8002
+# Optional settings come from a .env file next to this one (see .env.example).
+services:
+  catalogue:
+    build: ./services/catalogue
+    ports:
+      - "8001:8000"
+    environment:
+      SHOWS_PUBLIC_URL: ${SHOWS_PUBLIC_URL:-http://localhost:8002}
+    volumes:
+      - catalogue-data:/data
+
+  shows:
+    build: ./services/shows
+    ports:
+      - "8002:8000"
+    environment:
+      # Service-to-service call on the compose network, by service name.
+      CATALOGUE_URL: http://catalogue:8000
+      CATALOGUE_PUBLIC_URL: ${CATALOGUE_PUBLIC_URL:-http://localhost:8001}
+    volumes:
+      - shows-data:/data
+    depends_on:
+      catalogue:
+        # Wait for the catalogue's HEALTHCHECK (GET /health) to pass.
+        condition: service_healthy
+
+volumes:
+  catalogue-data:
+  shows-data:

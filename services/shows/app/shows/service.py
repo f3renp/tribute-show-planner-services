@@ -3,12 +3,12 @@
 validate_show, validate_break and move_in_order take plain values and
 return plain values, with no database or Flask, so they can be unit
 tested on their own. The functions below them save through the
-repository. Song details only ever come from catalogue_service.
+repository. Song details only ever come from the catalogue service, over
+HTTP through shows.catalogue_client.
 """
 from datetime import date
 
-from catalogue import service as catalogue_service
-from shows import repository
+from shows import catalogue_client, repository
 from shows.rules import format_duration
 
 # A show longer than 4 hours is a typo.
@@ -101,10 +101,10 @@ def move_in_order(item_ids, item_id, direction):
 
 def get_setlist(show_id):
     """The show's items in order. Each song item gets a "song" key with the
-    catalogue's details for it, fetched in one call through the seam."""
+    catalogue's details for it, fetched in one HTTP call through the seam."""
     items = repository.list_items(show_id)
     song_ids = [item["song_id"] for item in items if item["item_type"] == "song"]
-    songs = catalogue_service.get_songs_by_ids(song_ids)
+    songs = catalogue_client.get_songs_by_ids(song_ids)
     for item in items:
         item["song"] = songs.get(item["song_id"])
     return items
@@ -112,7 +112,7 @@ def get_setlist(show_id):
 
 def songs_to_choose():
     """Active catalogue songs, for the "add a song" picker."""
-    return catalogue_service.list_active_songs()
+    return catalogue_client.list_active_songs()
 
 
 # Saving: these use the database through the repository ------------------
@@ -133,7 +133,7 @@ def add_song_to_setlist(show_id, song_id):
     """Append a song to the end of a show's setlist. Return the errors."""
     if song_id is None:
         return ["Choose a song."]
-    song =catalogue_service.get_songs_by_ids([song_id]).get(song_id)
+    song = catalogue_client.get_songs_by_ids([song_id]).get(song_id)
     if song is None:
         return ["That song is not in the catalogue."]
     if not song["active"]:

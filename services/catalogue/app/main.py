@@ -1,6 +1,7 @@
-"""Entry point: builds the Flask app and serves it with waitress.
+"""Entry point of the catalogue service: builds the Flask app and serves it
+with waitress.
 
-Start it with: python app.py (or uv run python app.py)
+Start it from services/catalogue with: python app/main.py
 """
 from flask import Flask, redirect, url_for
 from waitress import serve
@@ -8,8 +9,8 @@ from waitress import serve
 import config
 import db
 import seed
+from catalogue.api import bp as api_bp
 from catalogue.routes import bp as catalogue_bp
-from shows.routes import bp as shows_bp
 
 
 def create_app():
@@ -19,11 +20,19 @@ def create_app():
     seed.seed_demo_catalogue()
     app = Flask(__name__)
     app.register_blueprint(catalogue_bp)
-    app.register_blueprint(shows_bp)
+    app.register_blueprint(api_bp)
+
+    @app.context_processor
+    def links_to_other_services():
+        return {"shows_public_url": config.SHOWS_PUBLIC_URL}
 
     @app.route("/")
     def home():
         return redirect(url_for("catalogue.song_list"))
+
+    @app.route("/health")
+    def health():
+        return {"status": "ok"}
 
     return app
 
